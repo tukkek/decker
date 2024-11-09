@@ -10892,7 +10892,10 @@ function OnOptions() {
 	Popup.options();
 }
 function OnDisconnect() {
-	Popup.confirm("Are you sure you wish to disconnect?", {noDefault:true}).onYes( () => DoDumpDecker(DUMP_DISCONNECT) );
+	Popup.confirm("Are you sure you wish to disconnect?", {noDefault:true}).onYes( () =>{
+		autoplay.stop()
+		DoDumpDecker(DUMP_DISCONNECT) 
+	} );
 }
 
 
@@ -10915,12 +10918,14 @@ function OnKeyPress(event) {
 		case "S": case "s": OnScan(); break;
 		case "E": case "e": OnEvaluate(); break;
 		case "W": case "w": OnWait(); break;
+		case " ": 					OnWait(); break;
 		case "L": case "l": OnSilence(); break;
 		case "K": case "k": OnSmoke(); break;
 		case "M": case "m": OnMedic(); break;
 		case "R": case "r": OnRelocate(); break;
 		case "C": case "c": OnDecrypt(); break;
 		case "U": case "u": OnUseNode(); break;
+		case "Escape": 			OnDisconnect(); break;
 		default: return;
 	}
 	event.preventDefault();
@@ -15318,6 +15323,82 @@ var Anim = {};
 
 }
 
+// autoplay.js
+
+class Autoplay{
+	constructor(){
+		this.timer=false
+		this.scanned=new Set()
+	}
+	
+	get hero(){return g_pChar}
+	
+	get ice(){return this.hero.m_olCurrentIceList}
+	
+	get target(){return this.hero.m_pTargettedIce}
+	
+	aim(ice){while(this.target!=ice) OnNextTarget()}
+	
+	get system(){return this.hero.m_pSystem}
+	
+	get alarm(){return this.system.m_nAlert}
+	
+	authenticate(){
+		let i=this.ice.find((i)=>i.HasQueried())
+		if(!i) return false
+		this.aim(i)
+		OnDeceive()
+		return true
+	}
+	
+	decrypt(){
+		if(this.target) return false
+		let i=this.ice.find((i)=>i.GetTypeString()=='Tapeworm')
+		// for(let i of this.ice) console.log(i.GetTypeString())
+		if(!i) return false
+		this.aim(i)
+		return true
+	}
+	
+	wait(program){
+		let bar=MV.l_abActiveNode
+		return bar.slots[bar.data[program][0]].style.visibility==''
+	}
+	
+	finish(){
+		if(this.hero.m_nTransferTurnsLeft>0) return true
+		return [PROGRAM_SCAN,PROGRAM_EVALUATE,PROGRAM_CLIENT].find((p)=>this.wait(p))
+	}
+	
+	get node(){return this.hero.m_pCurrentNode}
+	
+	scan(){
+		let n=this.node
+		let scanned=this.scanned
+		if(n.m_nType!=NT_IO||scanned.has(n)) return false
+		OnScan()
+		scanned.add(n)
+		return true
+	}
+	
+	turn(){
+		if(this.alarm==2) return
+		if(this.authenticate()) return
+		if(this.decrypt()) return
+		if(this.scan()) return
+		if(this.finish()) OnWait()
+	}
+	
+	start(){this.timer=setInterval(()=>this.turn(),3000)}
+	
+	stop(){
+		clearInterval(this.timer)
+		this.scanned.clear()
+	}
+}
+
+var autoplay=new Autoplay()
+
 // popup_matrix.js
 
 {
@@ -15761,6 +15842,7 @@ var Anim = {};
 		}
 		MV.l_MessageView.AddSeparator();
 		Anim.run();
+		autoplay.start()
 	}
 
 }
