@@ -1,5 +1,24 @@
 "use strict";
 
+// balance.js
+
+class Balance{
+	constructor(){this.ratio=1/10}
+	
+	round(value){
+		let magnitude=1
+		while(value>=10){
+			value/=10
+			magnitude*=10
+		}
+		return Math.floor(value)*magnitude
+	}
+	
+	change(value){return this.round(value*this.ratio)}
+}
+
+var balance=new Balance()
+
 // preload.js
 
 new Image().src = "img/welcome.png";
@@ -211,12 +230,8 @@ const g_nDaysPerMonth = [
 const g_szLifestyleString = [
 	"Poverty","Lower Class","Middle Class","Upper Class","Elite"
 ];
-const g_nLifestyleMonthlyCost = [
-	500,1000,2000,4000,10000
-];
-
-
-const g_szRepLevelString = [
+const g_nLifestyleMonthlyCost=[500,1000,2000,4000,10000].map((c)=>balance.change(c))
+const g_szRepLevelString=[
 	"Nobody",
 	"Wannabe",
 	"Cyber Surfer",
@@ -5362,9 +5377,9 @@ ShopItem.prototype.Generate = function(nType) {
 			this.m_szText = g_szChipNames[this.m_nSubType]+"  Level "+this.m_nRating;
 			break;
 	}
-
-	// Modify the price by a random factor (+/- 0..15%)
-	this.m_nPrice += Math.floor( (this.m_nPrice * (Random(31)-15)) / 100 );
+	let p=this.m_nPrice
+	p+=Math.floor((p*(Random(31)-15))/100)//modify by [-15%,+15%]
+	this.m_nPrice=balance.change(p)
 }
 
 
@@ -12734,34 +12749,26 @@ var Anim = {};
 		sklPrg.textContent = g_pChar.m_nProgrammingSkill; // programming
 		sklChp.textContent = g_pChar.m_nChipDesignSkill; // chip design
 		sklUnused.textContent = g_pChar.m_nSkillPoints; // unused points
-
 		// lifestyle
-		txtStyle.textContent = g_pChar.GetLifestyleString(); // lifestyle
-		txtCost.textContent = g_nLifestyleMonthlyCost[g_pChar.m_nLifestyle]; // rent
-		let dueIn = (GetDays(g_pChar.m_nMonth,g_pChar.m_nYear) - g_pChar.m_nDayOfMonth);
-		txtDue.textContent = (dueIn>1) ? (dueIn + " days") : "Tomorrow"; // due in
-		if (g_pChar.m_nLifestyle !== MAX_LIFESTYLE)
-			txtUpgr.textContent = g_nLifestyleMonthlyCost[g_pChar.m_nLifestyle+1] * LIFESTYLE_UPGRADE_FACTOR;
-		else
-			txtUpgr.textContent = "-";
-
+		let c=g_pChar
+		txtStyle.textContent=c.GetLifestyleString()//lifestyle
+		let rents=g_nLifestyleMonthlyCost
+		txtCost.textContent=rents[c.m_nLifestyle]//rent
+		let dueIn=(GetDays(c.m_nMonth,c.m_nYear)-c.m_nDayOfMonth)
+		txtDue.textContent=(dueIn>1)?(dueIn+" days"):"Tomorrow"//due in
+		let upgrade=balance.round(rents[c.m_nLifestyle+1]*LIFESTYLE_UPGRADE_FACTOR)
+		if(c.m_nLifestyle!=MAX_LIFESTYLE) txtUpgr.textContent=upgrade
+		else txtUpgr.textContent="-"
 		// disable/enable buttons
-		if (g_pChar.m_bOnRun) {
-			buttons[0].disabled = true;
-			buttons[1].disabled = true;
-			buttons[2].disabled = true;
-			buttons[3].disabled = true;
-			buttons[4].disabled = true;
-			buttons[5].disabled = true;
-			buttons[9].disabled = true;
-		} else {
-			buttons[0].disabled = (g_pChar.m_nAttackSkill > g_pChar.m_nSkillPoints);
-			buttons[1].disabled = (g_pChar.m_nDefenseSkill > g_pChar.m_nSkillPoints);
-			buttons[2].disabled = (g_pChar.m_nStealthSkill > g_pChar.m_nSkillPoints);
-			buttons[3].disabled = (g_pChar.m_nAnalysisSkill > g_pChar.m_nSkillPoints);
-			buttons[4].disabled = (g_pChar.m_nProgrammingSkill > g_pChar.m_nSkillPoints);
-			buttons[5].disabled = (g_pChar.m_nChipDesignSkill > g_pChar.m_nSkillPoints);
-			buttons[9].disabled = (g_pChar.m_nLifestyle===MAX_LIFESTYLE || g_pChar.m_nCredits < (g_nLifestyleMonthlyCost[g_pChar.m_nLifestyle+1] * LIFESTYLE_UPGRADE_FACTOR));
+		if(c.m_bOnRun) for(let i of [0,1,2,3,4,5,9]) buttons[i].disabled=true
+		else{
+			buttons[0].disabled=(c.m_nAttackSkill>c.m_nSkillPoints)
+			buttons[1].disabled=(c.m_nDefenseSkill>c.m_nSkillPoints)
+			buttons[2].disabled=(c.m_nStealthSkill>c.m_nSkillPoints)
+			buttons[3].disabled=(c.m_nAnalysisSkill>c.m_nSkillPoints)
+			buttons[4].disabled=(c.m_nProgrammingSkill>c.m_nSkillPoints)
+			buttons[5].disabled=(c.m_nChipDesignSkill>c.m_nSkillPoints)
+			buttons[9].disabled=(c.m_nLifestyle===MAX_LIFESTYLE||c.m_nCredits<upgrade)
 		}
 	}
 
@@ -14556,8 +14563,8 @@ var Anim = {};
 		let nDamage = MAX_HEALTH - g_pChar.m_nHealthPhysical;
 		l_nBaseTime = nDamage;
 		l_nFullTime = Math.floor((nDamage * (nDamage + 2))/3); // not exact, since it includes a "discount"
-		l_nBaseHospCost = 100 * l_nBaseTime;
-		l_nFullHospCost = 100 * l_nFullTime;
+		l_nBaseHospCost=balance.change(100*l_nBaseTime)
+		l_nFullHospCost=balance.change(100*l_nFullTime)
 
 		spans[0].textContent = l_nBaseTime;
 		spans[1].textContent = l_nFullTime;
@@ -15375,6 +15382,7 @@ class Autoplay{
 	}
 	
 	turn(){
+		if(!this.system) return
 		if(this.alarm==2) return
 		if(this.authenticate()) return
 		if(this.decrypt()) return
