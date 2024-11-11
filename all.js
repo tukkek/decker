@@ -4885,23 +4885,15 @@ Contract.prototype.Generate = function(bEasy) {
 		// Others have 1 to 5 days
 		this.m_nDaysLeft = bEasy ? 5 : (Random(5) + 1);
 	}
-
-	// Generate the pay
-	// Base pay is 100 * (difficulty + lifestyle))
-	this.m_nPay = 100 * (this.m_nDifficulty + g_pChar.m_nLifestyle);
-
-	// Modify for length of time allowed, with 3 being average (-20%..+20%)
-	this.m_nPay += Math.floor( (this.m_nPay * (3-this.m_nDaysLeft)) / 10 );
-
-	// Modify by a random factor (+/- 1..15%), which represents client's cheapness/generosity
-	this.m_nPay += Math.floor( ( this.m_nPay * (Random(31)-15) ) / 100 );
-
-	if (bEasy)
-		this.m_nPay = Math.floor(this.m_nPay * 1.2);
+	//generate the pay
+	let p=100*(this.m_nDifficulty+g_pChar.m_nLifestyle)
+	//modify for length of time allowed, with 3 being average [-20%,+20%]
+	p+=Math.floor((p*(3-this.m_nDaysLeft))/10)
+	//modify by a random factor [-15%,15%], which represents client's cheapness/generosity
+	p+=Math.floor((p*(Random(31)-15))/100)
+	if(bEasy) p=Math.floor(p*1.2)
+	this.m_nPay=balance.round(p)
 }
-
-
-
 
 // Global functions
 function GetFileTypePerCorp() {
@@ -13712,13 +13704,15 @@ var Anim = {};
 		btnView.disabled = (p===null);
 		btnAccept.disabled = (p===null);
 	}
-	function initFunc() {
-		// set up the contract list
-		tList.clear();
-		tList.setContents(g_pChar.m_olContracts);
-		// disable View & Accept button
-		btnView.disabled = true;
-		btnAccept.disabled = true;
+	function initFunc(){
+		//set up the contract list
+		tList.clear()
+		let contracts=g_pChar.m_olContracts
+		contracts.sort((contracta,contractb)=>contracta.m_nPay-contractb.m_nPay)
+		tList.setContents(contracts)
+		//disable buttons: View, Accept
+		btnView.disabled=true
+		btnAccept.disabled=true
 	}
 
 	function view() {
