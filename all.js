@@ -10886,19 +10886,12 @@ function OnDecrypt() {
 		DoRunProgram(pProgram);
 }
 
+function OnOptions(){Popup.options()}
 
-
-function OnOptions() {
-	Popup.options();
+function OnDisconnect(){
+	Popup.confirm("Are you sure you wish to disconnect?",{noDefault:true})
+		.onYes(()=>DoDumpDecker(DUMP_DISCONNECT))
 }
-function OnDisconnect() {
-	Popup.confirm("Are you sure you wish to disconnect?", {noDefault:true}).onYes( () =>{
-		autoplay.stop()
-		DoDumpDecker(DUMP_DISCONNECT) 
-	} );
-}
-
-
 
 function OnKeyPress(event) {
 	if (event.altKey || event.ctrlKey || event.metaKey) return;
@@ -15389,11 +15382,11 @@ class Autoplay{
 		if(this.finish()) OnWait()
 	}
 	
-	start(){this.timer=setInterval(()=>this.turn(),3000)}
-	
-	stop(){
-		clearInterval(this.timer)
+	start(){
+		let t=this.timer
+		if(t) clearInterval(t)
 		this.scanned.clear()
+		this.timer=setInterval(()=>this.turn(),3000)
 	}
 }
 
