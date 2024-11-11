@@ -15360,14 +15360,15 @@ class Autoplay{
 		return true
 	}
 	
-	wait(program){
-		let bar=MV.l_abActiveNode
+	wait(program,player=true){
+		let bar=player?MV.l_abActiveNode:MV.l_abActiveIce
 		return bar.slots[bar.data[program][0]].style.visibility==''
 	}
 	
 	finish(){
-		if(this.hero.m_nTransferTurnsLeft>0) return true
-		return [PROGRAM_SCAN,PROGRAM_EVALUATE,PROGRAM_CLIENT].find((p)=>this.wait(p))
+		return this.hero.m_nTransferTurnsLeft>0
+						||[PROGRAM_SCAN,PROGRAM_EVALUATE,PROGRAM_CLIENT].find((p)=>this.wait(p))
+						||[PROGRAM_VIRUS].find((p)=>this.wait(p,false))
 	}
 	
 	get node(){return this.hero.m_pCurrentNode}
