@@ -3542,10 +3542,8 @@ Character.prototype.GetLoadRatings = function() {
 
 // bFirst: if true, generates one extra contract, as easy as possible
 Character.prototype.GenerateContracts = function(bFirst) {
-	// Generate 1..3+(Rep/5) contracts (1 = 1..3, 5 = 1..4, etc.)
-	let nMax = 3 + Math.floor(this.m_nRepLevel/5);
-	let nCount = 1 + Random(nMax);
-
+	let nMax=3+Math.floor(this.m_nRepLevel/5)
+	let nCount=1+Random(nMax*3)
 	// Generate up to the maximum number
 	if (nCount + this.m_olContracts.length > nMax)
 		nCount = nMax - this.m_olContracts.length;
@@ -4779,10 +4777,10 @@ Contract.prototype.Generate = function(bEasy) {
 	if      (i < 15) this.m_nType = CONT_DEACTIVATE_IO;	// Deactivate - 15%
 	else if (i < 30) this.m_nType = CONT_ACTIVATE_IO;	// Activate - 15%
 	else if (i < 40) this.m_nType = CONT_SABOTAGE_IO;	// Sabotage - 10%
-	else if (i < 55) this.m_nType = CONT_STEAL;			// Steal files - 15%
-	else if (i < 65) this.m_nType = CONT_STEAL_ERASE;	// Steal and erase - 10%
-	else if (i < 75) this.m_nType = CONT_ERASE;			// Erase - 10%
-	else if (i < 85) this.m_nType = CONT_EDIT;			// Edit - 10%
+	else if (i < 85) this.m_nType = CONT_STEAL;			// Steal files - 15%
+	// else if (i < 65) this.m_nType = CONT_STEAL_ERASE;	// Steal and erase - 10%
+	// else if (i < 75) this.m_nType = CONT_ERASE;			// Erase - 10%
+	// else if (i < 85) this.m_nType = CONT_EDIT;			// Edit - 10%
 	else if (i < 90) this.m_nType = CONT_CRASH_SYS;		// Crash - 5%
 	else if (i < 95) this.m_nType = CONT_BACKDOOR;		// Backdoor - 5%
 	else             this.m_nType = CONT_RUN_PROGRAM;	// Run Program - 5%
@@ -4835,27 +4833,8 @@ Contract.prototype.Generate = function(bEasy) {
 
 	if (!bEasy) {
 		// Check for mission enhancers
-		// Check for no alarms (20% chance, 40% for edit, 50% for backdoor, no chance for crash)
-		let nChance;
-		switch (this.m_nType) {
-			case CONT_CRASH_SYS:
-				nChance = 0;
-				break;
-			case CONT_EDIT:
-				nChance = 4;
-				break;
-			case CONT_BACKDOOR:
-				nChance = 5;
-				break;
-			default:
-				nChance = 2;
-				break;
-		}
-		if (Random(10) < nChance) {
-			this.m_dwFlags |= CF_NO_ALARMS;
-			this.m_nDifficulty++;
-		}
-
+		this.m_dwFlags|=CF_NO_ALARMS
+		this.m_nDifficulty++
 		// Check for timed mission (10% chance)
 		if (nBaseDifficulty>4) { // Not until base level 5
 			if (Random(10)===0) {
@@ -4865,7 +4844,6 @@ Contract.prototype.Generate = function(bEasy) {
 				this.m_nDifficulty += 2;
 			}
 		}
-
 		// Check for multiple targets
 		if ( this.m_nTargetObject !== CT_CPU && this.m_nTargetObject !== CT_NODE_CPU ) {
 			// 2.5% at level 1. 50% chance at level 20.
@@ -4876,15 +4854,7 @@ Contract.prototype.Generate = function(bEasy) {
 			}
 		}
 	}
-
-	// Generate the days allowed
-	if (this.m_dwFlags & CF_TIMED) {
-		// Timed missions happen immediately
-		this.m_nDaysLeft = 1;
-	} else {
-		// Others have 1 to 5 days
-		this.m_nDaysLeft = bEasy ? 5 : (Random(5) + 1);
-	}
+	this.m_nDaysLeft=1
 	//generate the pay
 	let p=100*(this.m_nDifficulty+g_pChar.m_nLifestyle)
 	//modify for length of time allowed, with 3 being average [-20%,+20%]
